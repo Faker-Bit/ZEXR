@@ -58,24 +58,20 @@ jobs:
           alembic check
 
       - name: Run tests
+        # Deliberately NOT ci.db. conftest drops every table when the session
+        # ends, so sharing the migrated database with pytest would destroy the
+        # schema the following step seeds into. A separate file keeps pytest
+        # usable against any database while leaving ci.db intact.
         env:
-          DATABASE_URL: sqlite:///./ci.db
+          DATABASE_URL: sqlite:///./pytest.db
         run: pytest -q
 
       - name: Import the catalogue (no network)
         env:
           DATABASE_URL: sqlite:///./ci.db
         run: |
-          set -o pipefail
-          if ! python -m app.db.seed --no-sources > ci_seed.log 2>&1; then
-            echo "::error title=seed failed::$(tail -c 1800 ci_seed.log | tr '\n' ' ')"
-            exit 1
-          fi
-          if ! python -m app.cli providers import > ci_import.log 2>&1; then
-            echo "::error title=providers import failed::$(tail -c 1800 ci_import.log | tr '\n' ' ')"
-            exit 1
-          fi
-          tail -n 12 ci_seed.log ci_import.log
+          python -m app.db.seed --no-sources
+          python -m app.cli providers import
 
   postgres:
     name: Backend migrations on PostgreSQL
