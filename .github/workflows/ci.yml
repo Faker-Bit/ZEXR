@@ -22,6 +22,18 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13"]
 
+    env:
+      # There is no .env on the runner, so the config defaults apply and both
+      # discovery_enabled and scheduler_enabled default to true. Seeding then
+      # starts background discovery and the scheduler, which reach out to the
+      # network and make this step flaky. Turn them off explicitly. This is why
+      # the same commands pass in the postgres job, which sets these.
+      ENVIRONMENT: local
+      DISCOVERY_ENABLED: "false"
+      SCHEDULER_ENABLED: "false"
+      CACHE_ENABLED: "false"
+      RATE_LIMIT_ENABLED: "false"
+
     steps:
       - uses: actions/checkout@v4
 
