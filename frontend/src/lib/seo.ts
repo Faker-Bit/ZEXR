@@ -104,7 +104,7 @@ export const ORGANISATION_SCHEMA = {
   "@type": "Organization",
   name: "ZEXR Deal Hub",
   url: SITE_URL,
-  logo: absoluteUrl("/icon.svg"),
+  logo: absoluteUrl("/logo.png"),
   description: DEFAULT_DESCRIPTION,
   sameAs: [],
 };

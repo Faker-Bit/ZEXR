@@ -1,17 +1,22 @@
+"use client";
+
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /**
- * Brand mark.
+ * Brand mark for the header and footer.
  *
- * Prefers the supplied artwork at `/logo.png` (drop the exported ZEXR Deal Hub
- * image there). Until that file exists the inline SVG below stands in — a neon
- * "Z" in the same green, so the header never shows a broken image.
+ * Deliberately the compact inline `ZexrMark` rather than `/logo.png`. The
+ * supplied artwork is a full square lockup — the Z, the chrome "ZEXR"
+ * wordmark, "DEAL HUB", the tagline and six decorative tiles. At header size
+ * (36px) that reduces to unreadable noise, and pairing it with the text
+ * wordmark beside it would print "ZEXR DEAL HUB" twice.
  *
- * The wordmark is real text rather than part of the bitmap, which keeps it
- * selectable, translatable and crisp at any size.
+ * The wordmark is therefore real text, which keeps it selectable,
+ * translatable and crisp at any size. The full artwork is used where it has
+ * room to breathe: `LogoImage` on /about, and as the social preview image.
  */
 export function Logo({
   className,
@@ -98,22 +103,29 @@ export function ZexrMark({ className }: { className?: string }) {
   );
 }
 
-/** Full-bleed brand image, used on the marketing hero. Falls back to the mark. */
+/**
+ * Full brand artwork (1254x1254) for surfaces with room to show it.
+ * Falls back to the mark if the asset is missing, rather than leaving a gap.
+ */
 export function LogoImage({ className }: { className?: string }) {
+  const [failed, setFailed] = React.useState(false);
+
+  if (failed) {
+    return (
+      <div className={cn("flex items-center justify-center", className)}>
+        <ZexrMark className="size-32" />
+      </div>
+    );
+  }
+
   return (
     <Image
       src="/logo.png"
-      alt="ZEXR Deal Hub"
-      width={1242}
-      height={1242}
-      priority
+      alt="ZEXR Deal Hub — freebies, discounts and premium deals"
+      width={1254}
+      height={1254}
       className={cn("h-auto w-full", className)}
-      onError={(event) => {
-        // No artwork installed yet — swap in the inline mark rather than a
-        // broken-image glyph.
-        const el = event.currentTarget;
-        el.style.display = "none";
-      }}
+      onError={() => setFailed(true)}
     />
   );
 }

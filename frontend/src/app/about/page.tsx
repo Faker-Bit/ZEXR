@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoImage } from "@/components/site/logo";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -11,6 +12,10 @@ export const metadata = pageMetadata({
 export default function AboutPage() {
   return (
     <div className="container max-w-3xl py-10">
+      <div className="mx-auto mb-8 w-full max-w-sm">
+        <LogoImage />
+      </div>
+
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">About ZEXR Deal Hub</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         ZEXR Deal Hub exists because finding a good deal online is genuinely hard work. Offers are
