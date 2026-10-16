@@ -162,6 +162,57 @@ def test_country_filter_and_currency_conversion(client, session):
     assert response.json()["total"] == 0
 
 
+def test_excluded_countries_filter(client, session):
+    """excluded_countries is a JSON array filtered with LIKE.
+
+    SQLite stores JSON as text, so the un-cast predicate worked by accident.
+    PostgreSQL has no `json ~~* text` operator, so the same predicate raised an
+    operator error there. This test runs against whichever database DATABASE_URL
+    points at, which is what makes the dialect visible.
+    """
+    categories, brands, _ = _seed(session)
+
+    make_offer(
+        session,
+        categories["ai-tools"],
+        brand=brands["Replicate"],
+        slug="not-for-us",
+        is_global=True,
+        country_codes=("US", "GB", "IN"),
+        excluded_countries=["US"],
+    )
+    make_offer(
+        session,
+        categories["ai-tools"],
+        brand=brands["Replicate"],
+        slug="no-exclusions",
+        is_global=True,
+        country_codes=("US", "GB", "IN"),
+    )
+    make_offer(
+        session,
+        categories["ai-tools"],
+        brand=brands["Replicate"],
+        slug="null-exclusions",
+        is_global=True,
+        country_codes=("US", "GB", "IN"),
+        excluded_countries=None,
+    )
+    session.commit()
+
+    # Filtering by the excluded country must drop that offer only.
+    response = client.get("/api/v1/offers", params={"country_codes": "US"})
+    slugs = {item["slug"] for item in response.json()["items"]}
+    assert "not-for-us" not in slugs
+    assert {"no-exclusions", "null-exclusions"} <= slugs
+
+    # A country that is not excluded keeps it.
+    response = client.get("/api/v1/offers", params={"country_codes": "GB"})
+    slugs = {item["slug"] for item in response.json()["items"]}
+    assert "not-for-us" in slugs
+    assert {"no-exclusions", "null-exclusions"} <= slugs
+
+
 def test_price_conversion_to_inr(client, session):
     categories, brands, _ = _seed(session)
     make_offer(

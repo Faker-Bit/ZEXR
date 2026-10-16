@@ -175,6 +175,28 @@ jobs:
           print("no demo offers")
           PY
 
+      - name: Create an isolated database for the test suite
+        # conftest drops every table when the session ends, so the suite gets its
+        # own database rather than the one the checks above just asserted against.
+        run: |
+          python - <<'PY'
+          import psycopg
+          with psycopg.connect(
+              "postgresql://zexrdealhub:zexrdealhub@localhost:5432/postgres",
+              autocommit=True,
+          ) as conn:
+              conn.execute("DROP DATABASE IF EXISTS zexrdealhub_test")
+              conn.execute("CREATE DATABASE zexrdealhub_test")
+          print("test database ready")
+          PY
+
+      - name: Run the test suite against PostgreSQL
+        # SQLite stores JSON as text, which hides dialect bugs. Running the same
+        # suite on Postgres is what catches queries that only work on one engine.
+        env:
+          DATABASE_URL: postgresql+psycopg://zexrdealhub:zexrdealhub@localhost:5432/zexrdealhub_test
+        run: pytest -q
+
   frontend:
     name: Frontend (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest

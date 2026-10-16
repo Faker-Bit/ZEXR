@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Sequence
 
-from sqlalchemy import Select, and_, case, func, or_, select
+from sqlalchemy import Select, and_, case, cast, func, literal, or_, select, Text
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.logging import get_logger
@@ -127,8 +127,14 @@ def apply_filters(
                 ),
             )
         )
+# excluded_countries is a JSON array, so it has to be cast to text
+        # before a LIKE can touch it. PostgreSQL has no `json ~~* text`
+        # operator, and without the cast this raises an operator error on the
+        # production database. Same pattern as services/search.py.
         stmt = stmt.where(
-            func.coalesce(Offer.excluded_countries, "[]").not_like(f'%"{countries[0]}"%')
+            func.coalesce(cast(Offer.excluded_countries, Text), literal("[]")).not_like(
+                f'%"{countries[0]}"%'
+            )
         )
 
     if filters.min_savings is not None:
