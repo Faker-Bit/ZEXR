@@ -195,15 +195,7 @@ jobs:
         # suite on Postgres is what catches queries that only work on one engine.
         env:
           DATABASE_URL: postgresql+psycopg://zexrdealhub:zexrdealhub@localhost:5432/zexrdealhub_test
-        run: |
-          if ! pytest -q -ra --tb=line > pg_pytest.log 2>&1; then
-            grep -E "^(FAILED|ERROR)" pg_pytest.log | head -20 | sed 's/^/FAILEDLINE /' | while read -r l; do
-              echo "::error::${l#FAILEDLINE }"
-            done
-            echo "::error title=tail::$(tail -c 2500 pg_pytest.log | tr '\n' ' ')"
-            exit 1
-          fi
-          tail -n 5 pg_pytest.log
+        run: pytest -q
 
   frontend:
     name: Frontend (Node ${{ matrix.node-version }})

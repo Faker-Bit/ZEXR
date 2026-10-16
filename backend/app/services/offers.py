@@ -535,19 +535,26 @@ def build_facets(session: Session, filters: OfferFilterParams) -> FacetResponse:
     from app.models.offer import OfferCountry
 
     country_stmt = (
-        select(Country.code, Country.name, func.count(func.distinct(OfferCountry.offer_id)))
+        select(
+            Country.code,
+            Country.name,
+            Country.flag_emoji,
+            func.count(func.distinct(OfferCountry.offer_id)).label("offer_count"),
+        )
         .join(OfferCountry, OfferCountry.country_code == Country.code)
         .join(Offer, Offer.id == OfferCountry.offer_id)
         .where(Offer.status == OfferStatus.PUBLISHED.value, OfferCountry.is_available.is_(True))
-        .group_by(Country.code, Country.name)
+        # flag_emoji has to be grouped too. It used to be bolted on afterwards
+        # with add_columns(), which SQLite tolerated but PostgreSQL rejects with
+        # "column must appear in the GROUP BY clause", so this facet raised and
+        # the whole offers endpoint answered 503 in production.
+        .group_by(Country.code, Country.name, Country.flag_emoji)
         .order_by(func.count(func.distinct(OfferCountry.offer_id)).desc())
         .limit(24)
     )
     countries = [
         FacetBucket(value=code, label=name, count=count, extra={"flag": flag})
-        for code, name, count, flag in session.execute(
-            country_stmt.add_columns(Country.flag_emoji)
-        ).all()
+        for code, name, flag, count in session.execute(country_stmt).all()
     ]
 
     max_row = session.execute(
