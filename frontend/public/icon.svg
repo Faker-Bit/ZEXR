@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="ZEXR Deal Hub">
+  <defs>
+    <linearGradient id="z" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eafff2"/>
+      <stop offset="42%" stop-color="#7dff9b"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="#08090b"/>
+  <g filter="url(#glow)">
+    <path d="M14 12h40l-5 11H20z" fill="url(#z)"/>
+    <path d="M40 23l7 11-24 24H11l31-35z" fill="url(#z)"/>
+    <path d="M38 47h16l-5 11H30z" fill="url(#z)"/>
+  </g>
+  <path d="M32 6a26 26 0 1 1-18.4 44.4" fill="none" stroke="#4ade80" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>
+</svg>

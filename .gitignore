@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --------------------------------------------------------------- Database
+# Local SQLite files are regenerable: `python -m app.db.seed`
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# -------------------------------------------------------------- Environment
+# Real .env files hold credentials and must never be committed.
+# The *.example templates are tracked deliberately.
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.local
+
+# --------------------------------------------------------- Keys & secrets
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+
+# ------------------------------------------------------------------ Node
+node_modules/
+.next/
+out/
+dist/
+build/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------------- Logs
+*.log
+logs/
+
+# ------------------------------------------------------- Scratch / tooling
+trace_*.py
+*_tmp.json
+*.bak
+*.orig
+*.rej
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------------------------------------------------------- Storage
+.cache/
+.parcel-cache/
+.turbo/

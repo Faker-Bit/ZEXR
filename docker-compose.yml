@@ -1,0 +1,164 @@
+# ---------------------------------------------------------------------------
+# ZEXR Deal Hub — full stack.
+#
+#   docker compose up --build          web + api + postgres + redis
+#   docker compose run --rm migrate    apply migrations
+#   docker compose run --rm seed       taxonomy + clearly-labelled demo data
+#
+# The scheduler runs in-process inside the API container by default. For a larger
+# deployment run `celery` + `beat` profiles instead (see below).
+# ---------------------------------------------------------------------------
+name: zexrdealhub
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zexrdealhub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zexrdealhub}
+      POSTGRES_DB: zexrdealhub
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zexrdealhub -d zexrdealhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:${POSTGRES_PASSWORD:-zexrdealhub}@postgres:5432/zexrdealhub
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      DISCOVERY_ENABLED: ${DISCOVERY_ENABLED:-true}
+      DISCOVERY_AUTO_PUBLISH: "false"
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-console}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@zexrdealhub.com}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:3000/auth/callback}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      AFFILIATE_NETWORK_API_KEY: ${AFFILIATE_NETWORK_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: http://api:8000
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_PREFIX: /api/v1
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+  # ----------------------------------------------------------- one-shot jobs
+  migrate:
+    build:
+      context: ./backend
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:${POSTGRES_PASSWORD:-zexrdealhub}@postgres:5432/zexrdealhub
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    build:
+      context: ./backend
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:${POSTGRES_PASSWORD:-zexrdealhub}@postgres:5432/zexrdealhub
+    command: ["python", "-m", "app.db.seed"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ----------------------------------------------------- background workers
+  worker:
+    build:
+      context: ./backend
+    profiles: ["celery"]
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:${POSTGRES_PASSWORD:-zexrdealhub}@postgres:5432/zexrdealhub
+      REDIS_URL: redis://redis:6379/0
+      # Beat owns the schedule when workers are enabled.
+      SCHEDULER_ENABLED: "false"
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      DISCOVERY_ENABLED: ${DISCOVERY_ENABLED:-true}
+      DISCOVERY_AUTO_PUBLISH: "false"
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-console}
+    command: ["celery", "-A", "app.workers.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ./backend
+    profiles: ["celery"]
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:${POSTGRES_PASSWORD:-zexrdealhub}@postgres:5432/zexrdealhub
+      REDIS_URL: redis://redis:6379/0
+      SCHEDULER_ENABLED: "false"
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      DISCOVERY_ENABLED: ${DISCOVERY_ENABLED:-true}
+      DISCOVERY_AUTO_PUBLISH: "false"
+    command: ["celery", "-A", "app.workers.celery_app.celery_app", "beat", "--loglevel=info"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
