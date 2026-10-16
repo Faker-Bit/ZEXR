@@ -22,5 +22,7 @@ feedparser>=6.0
 pyyaml>=6.0
 bcrypt>=4.0
 
-# PostgreSQL driver (enable when DATABASE_URL points at PostgreSQL)
-# psycopg[binary]>=3.2
+# PostgreSQL driver. Required by the production DATABASE_URL in
+# docker-compose.yml (postgresql+psycopg://) and by the PostgreSQL CI job.
+# Without this the API cannot open a connection to Postgres at all.
+psycopg[binary]>=3.2

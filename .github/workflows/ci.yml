@@ -57,6 +57,108 @@ jobs:
           python -m app.db.seed --no-sources
           python -m app.cli providers import
 
+  postgres:
+    name: Backend migrations on PostgreSQL
+    # SQLite is not the production database. A migration chain can pass every
+    # SQLite test and still fail on Postgres, and vice versa, so the deploy
+    # path is validated against a real Postgres matching docker-compose.yml.
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: zexrdealhub
+          POSTGRES_PASSWORD: zexrdealhub
+          POSTGRES_DB: zexrdealhub_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: postgresql+psycopg://zexrdealhub:zexrdealhub@localhost:5432/zexrdealhub_ci
+      ENVIRONMENT: local
+      DISCOVERY_ENABLED: "false"
+      SCHEDULER_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            if python -c "import psycopg; psycopg.connect('${{ env.DATABASE_URL }}'.replace('postgresql+psycopg','postgresql')).close()" 2>/dev/null; then
+              echo "PostgreSQL is accepting connections"; exit 0
+            fi
+            sleep 2
+          done
+          echo "PostgreSQL never became reachable"; exit 1
+
+      - name: Upgrade a fresh database
+        # This is the step that a SQLite-only workflow cannot exercise.
+        run: alembic upgrade head
+
+      - name: Check migrations match the models
+        run: alembic check
+
+      - name: Import the catalogue through the ORM
+        # Exercises real INSERTs through psycopg, not just the migration DDL.
+        run: |
+          python -m app.db.seed --no-sources
+          python -m app.cli providers import
+
+      - name: Confirm the database is populated and readable
+        run: |
+          python - <<'PY'
+          from sqlalchemy import func, select
+          from app.db.session import SessionLocal
+          from app.models import Category, Offer, Source
+
+          with SessionLocal() as session:
+              offers = session.scalar(select(func.count()).select_from(Offer))
+              sources = session.scalar(select(func.count()).select_from(Source))
+              categories = session.scalar(select(func.count()).select_from(Category))
+              print(f"offers={offers} sources={sources} categories={categories}")
+              assert offers and sources and categories, "catalogue came back empty"
+              assert session.scalar(select(Offer.official_url).limit(1)), "no offer rows readable"
+          print("PostgreSQL round-trip OK")
+          PY
+
+      - name: Confirm no demo data was published
+        run: |
+          python - <<'PY'
+          from sqlalchemy import select
+          from app.db.session import SessionLocal
+          from app.models import Offer
+
+          with SessionLocal() as session:
+              demo = session.scalars(
+                  select(Offer).where(Offer.is_demo_data.is_(True))
+              ).all()
+              assert not demo, f"{len(demo)} demo offers present"
+          print("no demo offers")
+          PY
+
   frontend:
     name: Frontend (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest

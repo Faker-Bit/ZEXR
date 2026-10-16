@@ -13,7 +13,12 @@ os.environ.setdefault("DISCOVERY_ENABLED", "false")
 os.environ.setdefault("SCHEDULER_ENABLED", "false")
 os.environ.setdefault("CACHE_ENABLED", "false")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
-os.environ["DATABASE_URL"] = "sqlite:///./test_zexrdealhub.db"
+
+# Default to a throwaway SQLite file, but let CI (or a developer with a local
+# Postgres) override it. Pointing DATABASE_URL at PostgreSQL is what makes
+# dialect-specific bugs visible, so the harness must not silently ignore it.
+if "DATABASE_URL" not in os.environ:
+    os.environ["DATABASE_URL"] = "sqlite:///./test_zexrdealhub.db"
 os.environ["SECRET_KEY"] = "test-secret-key-not-used-in-production-0123456789"
 
 from fastapi.testclient import TestClient  # noqa: E402
