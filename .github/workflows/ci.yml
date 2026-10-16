@@ -66,8 +66,16 @@ jobs:
         env:
           DATABASE_URL: sqlite:///./ci.db
         run: |
-          python -m app.db.seed --no-sources
-          python -m app.cli providers import
+          set -o pipefail
+          if ! python -m app.db.seed --no-sources > ci_seed.log 2>&1; then
+            echo "::error title=seed failed::$(tail -c 1800 ci_seed.log | tr '\n' ' ')"
+            exit 1
+          fi
+          if ! python -m app.cli providers import > ci_import.log 2>&1; then
+            echo "::error title=providers import failed::$(tail -c 1800 ci_import.log | tr '\n' ' ')"
+            exit 1
+          fi
+          tail -n 12 ci_seed.log ci_import.log
 
   postgres:
     name: Backend migrations on PostgreSQL
