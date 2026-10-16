@@ -1,5 +1,16 @@
 // ---------------------------------------------------------------------------
 // Multi-stage build so `standalone` exists for the runtime image.
+//
+// `distDir` is the safety valve that keeps `npm run dev` and `npm run build`
+// from trampling each other. Both Next commands write compiled output into
+// `distDir`, so a build run while `next dev` is serving will overwrite the dev
+// server's artefacts and leave it answering from stale pages that no longer
+// match the source.
+//
+// `scripts/dev.mjs` points dev at `.next-dev`, leaving `.next` to the build.
+// The production path is deliberately untouched: `next build` still writes
+// `.next`, because Dockerfile and `scripts/start-standalone.mjs` both expect
+// `.next/standalone` and `.next/static`.
 // ---------------------------------------------------------------------------
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +18,7 @@ import { fileURLToPath } from "node:url";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,

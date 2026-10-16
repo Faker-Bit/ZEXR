@@ -7,7 +7,16 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   {
-    ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
+    // `.next-dev` is the dev server's distDir (see next.config.mjs). Linting it
+    // scans thousands of generated files and drowns the real signal.
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      ".next-dev/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+    ],
   },
   {
     rules: {

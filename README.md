@@ -143,6 +143,13 @@ npm run dev
 
 The site is now on <http://localhost:3000>.
 
+> **Dev and build use separate directories.** `npm run dev` compiles into
+> `frontend/.next-dev`, while `npm run build` compiles into `frontend/.next`.
+> This means you can leave the dev server running and build in another terminal
+> without the build overwriting the running server's output and leaving it
+> serving pages that no longer match your source. `npm start` and the Dockerfile
+> both read from `.next`, as before.
+
 ### Demo accounts
 
 | Role | Email | Password | Can do |
