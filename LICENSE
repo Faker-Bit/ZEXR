@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 ZEXR Deal Hub
+Copyright (c) 2026 Faker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@ SOFTWARE.
 
 ---
 
-Note on data: this project republishes links and summary facts about
-third-party offers. Offer data ingested from public feeds remains the property
-of its respective vendors; see the `license_note` on each source for attribution.
+Note on data: the licence above covers the source code in this repository. It
+does not grant any rights over third-party offer data. Data ingested from
+public feeds remains the property of its respective vendors; see the
+`license_note` on each source for attribution and terms.
