@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { breadcrumbSchema, faqSchema, jsonLd, pageMetadata } from "@/lib/seo";
 import { OfferCard } from "@/components/offers/offer-card";
 import { Button } from "@/components/ui/button";
+import { loadCategories } from "@/lib/categories";
 
 export const revalidate = 600;
 
@@ -42,7 +43,7 @@ function CategoryUnavailable({ slug }: { slug: string }) {
 
 export async function generateStaticParams() {
   try {
-    const categories = await api.categories();
+    const categories = await loadCategories();
     return categories.map((category) => ({ slug: category.slug }));
   } catch {
     return [];

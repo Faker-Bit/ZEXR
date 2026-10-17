@@ -55,7 +55,7 @@ def _issue_tokens(response: Response, user: User) -> TokenPair:
         access,
         max_age=settings.access_token_ttl_minutes * 60,
         httponly=True,
-        secure=settings.cookie_secure,
+        secure=settings.effective_cookie_secure,
         samesite="lax",
         path="/",
     )

@@ -42,11 +42,33 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------- security
     secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(48))
     jwt_algorithm: str = "HS256"
+
+    @field_validator("jwt_algorithm", mode="after")
+    @classmethod
+    def _only_symmetric_jwt(cls, value: str) -> str:
+        """Refuse anything that is not an HMAC family algorithm.
+
+        Tokens are signed and verified with the shared secret_key. Allowing an
+        asymmetric algorithm (RS*/ES*/PS*) would mean a verifier configured to
+        accept a public key, which is the precondition for the python-jose key
+        confusion issue (PYSEC-2026-4298) and for classic algorithm confusion.
+        Failing fast at startup is cheaper than discovering it in production.
+        """
+        if value not in {"HS256", "HS384", "HS512"}:
+            raise ValueError(
+                f"JWT_ALGORITHM must be one of HS256/HS384/HS512 (got {value!r}); "
+                "this service signs with a shared secret, not an asymmetric key pair"
+            )
+        return value
     access_token_ttl_minutes: int = 60 * 12
     refresh_token_ttl_days: int = 30
     cookie_name: str = "zexrdealhub_token"
     cookie_secure: bool = False
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    # Comma-separated Host header allowlist. "*" disables the check, which is the
+    # default so a fresh checkout is not broken by an unexpected Host. Set
+    # ALLOWED_HOSTS in production to reject spoofed Host headers.
+    allowed_hosts: str = "*"
 
     # ----------------------------------------------------------------- redis
     redis_url: str = "redis://localhost:6379/0"
@@ -127,9 +149,49 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.environment == "production"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def expose_api_docs(self) -> bool:
+        """Whether /docs, /redoc and /openapi.json are served.
+
+        `debug` defaults to True so a fresh checkout is developer friendly, but
+        that means ENVIRONMENT=production on its own still published a full
+        API map. Production must never expose the schema, so both conditions
+        have to hold.
+        """
+        return self.debug and not self.is_production
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def effective_cookie_secure(self) -> bool:
+        """Cookie `Secure` flag.
+
+        Defaults to on in production. Local development is plain HTTP, where a
+        Secure cookie would be silently dropped and every login would appear to
+        fail, so it is only forced once the environment is production.
+        """
+        return self.cookie_secure or self.is_production
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def jwt_algorithms(self) -> list[str]:
+        """Algorithm allowlist handed to jwt.decode().
+
+        Always a single-element list. Pinning it here means a misconfigured
+        JWT_ALGORITHM can never widen what the verifier accepts, which is the
+        precondition for algorithm-confusion attacks.
+        """
+        return [self.jwt_algorithm]
+
     @property
     def effective_broker_url(self) -> str:
         return self.celery_broker_url or self.redis_url
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def allowed_host_list(self) -> list[str]:
+        hosts = [h.strip() for h in self.allowed_hosts.split(",") if h.strip()]
+        return hosts or ["*"]
 
     @property
     def effective_result_backend(self) -> str:

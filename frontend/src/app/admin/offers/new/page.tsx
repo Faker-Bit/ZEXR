@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 import { AdminOfferEditor } from "./admin-offer-editor";
 import type { Category } from "@/lib/types";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function NewOfferPage() {
   let categories: Category[] = [];
   try {
-    categories = await api.categories();
+    categories = await loadCategories();
   } catch {
     categories = [];
   }

@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -64,9 +65,9 @@ def create_app() -> FastAPI:
             "API for ZEXR Deal Hub — a global platform for discovering verified free trials, "
             "discounts, free credits and free online tools."
         ),
-        docs_url=settings.docs_url if settings.debug else None,
-        redoc_url="/redoc" if settings.debug else None,
-        openapi_url="/openapi.json" if settings.debug else None,
+        docs_url=settings.docs_url if settings.expose_api_docs else None,
+        redoc_url="/redoc" if settings.expose_api_docs else None,
+        openapi_url="/openapi.json" if settings.expose_api_docs else None,
         lifespan=lifespan,
         contact={"name": "ZEXR Deal Hub", "url": settings.site_url},
         license_info={"name": "Terms of use", "url": f"{settings.site_url}/terms"},
@@ -84,6 +85,13 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(GZipMiddleware, minimum_size=1024)
 
+    # Rejects requests whose Host header is not in the allowlist. Disabled by
+    # default ("*") so a fresh checkout works; set ALLOWED_HOSTS in production.
+    if settings.allowed_host_list != ["*"]:
+        app.add_middleware(
+            TrustedHostMiddleware, allowed_hosts=settings.allowed_host_list
+        )
+
     if limiter is not None:
         app.state.limiter = limiter
         app.add_exception_handler(RateLimitExceededAny, rate_limit_exceeded_handler)
@@ -99,6 +107,23 @@ def create_app() -> FastAPI:
         if settings.debug:
             elapsed = (time.perf_counter() - started) * 1000
             response.headers["X-Response-Time-Ms"] = f"{elapsed:.1f}"
+
+        # Defence in depth: the API is reachable directly, not only through the
+        # Next.js server, so it sets its own headers rather than relying on the
+        # frontend. JSON is never rendered as HTML, which is why the policy can
+        # be this tight.
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("Cross-Origin-Resource-Policy", "same-site")
+        # /docs is Swagger UI, which pulls CSS/JS from a CDN and runs inline
+        # scripts. Locking it down would break the development docs, so the
+        # strict policy is only applied when the docs are disabled.
+        if not settings.expose_api_docs:
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; sandbox",
+            )
         return response
 
     @app.exception_handler(RequestValidationError)

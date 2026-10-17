@@ -5,9 +5,8 @@ import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/components/site/auth-provider";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
-import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 import { siteMetadata, jsonLd, websiteSchema, ORGANISATION_SCHEMA } from "@/lib/seo";
-import type { Category } from "@/lib/types";
 
 export const metadata: Metadata = siteMetadata;
 
@@ -24,15 +23,12 @@ export const viewport = {
  * Categories are needed by the header, footer and most pages. Fetched once per
  * request with revalidation so taxonomy edits appear quickly without hammering
  * the API.
+ *
+ * Wrapped in React's `cache()` so a single render never asks the API for the
+ * category list twice. The root layout needs it for the header and footer, and
+ * /categories, /submit and /admin/offers/new each want it too; without the
+ * memo every one of those routes issued a duplicate request per render.
  */
-async function loadCategories(): Promise<Category[]> {
-  try {
-    return await api.categories();
-  } catch {
-    return [];
-  }
-}
-
 export default async function RootLayout({
   children,
 }: {

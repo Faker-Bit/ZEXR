@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 import { pageMetadata } from "@/lib/seo";
 import { CategoryGrid } from "@/components/home/newsletter";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const ICONS: Record<string, string> = {
 export default async function CategoriesPage() {
   let categories: Awaited<ReturnType<typeof api.categories>> = [];
   try {
-    categories = await api.categories();
+    categories = await loadCategories();
   } catch {
     categories = [];
   }

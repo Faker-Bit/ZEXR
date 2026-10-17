@@ -88,7 +88,7 @@ def create_refresh_token(subject: str | int, **claims: Any) -> str:
 
 def decode_token(token: str, expected_type: TokenType | None = None) -> dict[str, Any] | None:
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, settings.secret_key, algorithms=settings.jwt_algorithms)
     except JWTError:
         return None
     if expected_type and payload.get("typ") != expected_type:

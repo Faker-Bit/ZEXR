@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { api } from "@/lib/api";
 import { pageMetadata, jsonLd, breadcrumbSchema } from "@/lib/seo";
 import { DirectoryClient } from "./directory-client";
+import { loadCategories } from "@/lib/categories";
 
 export const metadata: Metadata = pageMetadata({
   title: "All offers — browse every free trial, discount and free credit",
@@ -27,7 +28,7 @@ export default async function OffersPage({
 
   const [offersResult, categoriesResult, countriesResult, typesResult] = await Promise.allSettled([
     api.offers(query),
-    api.categories(),
+    loadCategories(),
     api.countries(),
     api.offerTypes(),
   ]);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 import { pageMetadata } from "@/lib/seo";
 import { SubmitForm } from "./submit-form";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = pageMetadata({
 export default async function SubmitPage() {
   let categories: Awaited<ReturnType<typeof api.categories>> = [];
   try {
-    categories = await api.categories();
+    categories = await loadCategories();
   } catch {
     categories = [];
   }

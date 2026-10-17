@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SearchPageClient } from "./search-client";
 import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 
 export const metadata: Metadata = {
   title: "Search deals",
@@ -27,7 +28,7 @@ export default async function SearchPage({
   const [offersResult, categoriesResult, countriesResult, typesResult, trendingResult] =
     await Promise.allSettled([
       api.offers(query),
-      api.categories(),
+      loadCategories(),
       api.countries(),
       api.offerTypes(),
       api.trendingSearches(10),

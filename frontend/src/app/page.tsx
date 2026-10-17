@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { jsonLd, pageMetadata } from "@/lib/seo";
 import { formatCompact, formatMoney, pluralise } from "@/lib/utils";
 import type { HomeBundle, OfferCard as OfferCardType } from "@/lib/types";
+import { loadCategories } from "@/lib/categories";
 
 export const revalidate = 120;
 
@@ -41,7 +42,7 @@ export default async function HomePage() {
 
   const [homeResult, categoriesResult, interestsResult] = await Promise.allSettled([
     api.home(8),
-    api.categories(),
+    loadCategories(),
     api.interests(),
   ]);
   if (homeResult.status === "fulfilled") bundle = homeResult.value;

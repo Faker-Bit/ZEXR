@@ -34,6 +34,32 @@ const nextConfig = {
     dangerouslyAllowSVG: false,
   },
   async headers() {
+    const isProd = process.env.NODE_ENV === "production";
+
+    // Next.js injects inline bootstrap/hydration scripts and the theme
+    // bootstrap, so script-src needs 'unsafe-inline' here. That limits how much
+    // this CSP buys against XSS, but the other directives close the sinks that
+    // actually get abused: injected <object>/<embed>, <base> hijacking, framing
+    // and form exfiltration. Moving to per-request nonces needs browser
+    // testing, so it is deliberately not attempted blind.
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      // 'unsafe-eval' is only required by the dev server (Turbopack/HMR).
+      `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "manifest-src 'self'",
+      "worker-src 'self'",
+      // Only safe to force over TLS; it would break plain-http local dev.
+      ...(isProd ? ["upgrade-insecure-requests"] : []),
+    ].join("; ");
+
     return [
       {
         source: "/:path*",
@@ -45,6 +71,21 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
+          { key: "Content-Security-Policy", value: csp },
+          // Isolates the browsing context so a cross-origin opener cannot reach
+          // this window via window.opener.
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+          // HSTS only over TLS, and only in production: sending it on plain-http
+          // localhost would make the browser pin the dev origin to HTTPS.
+          ...(isProd
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000; includeSubDomains",
+                },
+              ]
+            : []),
         ],
       },
     ];

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { api } from "@/lib/api";
+import { loadCategories } from "@/lib/categories";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
@@ -29,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const [categoriesResult, offersResult] = await Promise.allSettled([
-    api.categories(),
+    loadCategories(),
     api.offers({ page_size: 100, sort: "popular" }),
   ]);
 
