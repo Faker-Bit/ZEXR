@@ -213,6 +213,68 @@ CATALOGUE: tuple[ProviderEntry, ...] = (
                   "Open-source; hardware costs apply.", ("local", "gguf", "open-source")),
     ProviderEntry("SGLang", "https://github.com/sgl-project/sglang", "SELF-HOST", "FREE", "developer-tools-apis",
                   "Open-source inference framework; hardware costs apply.", ("local", "open-source")),
+
+    # -------------------------------------------- free-tier APIs and gateways
+    # Compiled October 2026 from community-maintained free-tier indexes
+    # (awesome-freellm-apis, Free-LLM, OmniRoute FREE_TIERS.md) cross-checked
+    # against each vendor's own documentation. These record what those sources
+    # *report*, so they land as needs_manual like everything else here. Free
+    # tiers on this list change frequently - that is the whole reason the CHECK
+    # label exists.
+    ProviderEntry("Scaleway Generative APIs", "https://www.scaleway.com/", "HOST", "CREDITS",
+                  "ai-tools",
+                  "1,000,000 free tokens reported on registration, no credit card.",
+                  ("hosted", "tokens", "europe")),
+    ProviderEntry("Nous Portal", "https://nousresearch.com/", "GATEWAY", "CHECK",
+                  "ai-tools",
+                  "Free model tier reported; may require zero-value payment verification.",
+                  ("router", "nous", "open-weights")),
+    ProviderEntry("Hetzner Inference API", "https://www.hetzner.com/", "HOST", "CHECK",
+                  "ai-tools",
+                  "Experimental free phase reported: 10 requests and ~4M input tokens "
+                  "per 60s per key, with no billing system during the trial.",
+                  ("hosted", "europe", "experimental")),
+    ProviderEntry("OpenCode Zen", "https://opencode.ai/zen", "GATEWAY", "FREE", "developer-tools-apis",
+                  "9-34 free coding models reported; registration only, no credit card.",
+                  ("router", "coding", "agent")),
+    ProviderEntry("LLM7", "https://llm7.io/", "GATEWAY", "FREE", "ai-tools",
+                  "100K-5M free tokens per day reported across roughly 24 models; no credit card.",
+                  ("router", "tokens", "openai-compatible")),
+    ProviderEntry("xKiro", "https://xkiro.com/", "GATEWAY", "FREE", "ai-tools",
+                  "5,000,000 free tokens per day reported across 39+ models with a hard stop; "
+                  "no credit card.",
+                  ("router", "tokens", "coding")),
+    ProviderEntry("Routeway", "https://www.routeway.ai/", "GATEWAY", "FREE", "ai-tools",
+                  "200 requests per day at 5 RPM on free models reported; registration only.",
+                  ("router", "requests")),
+    ProviderEntry("Onomeo", "https://onomeo.com/", "GATEWAY", "FREE", "ai-tools",
+                  "30 free-model calls every 5 hours per account reported, 12 RPM per key.",
+                  ("router", "coding")),
+    ProviderEntry("Aion Labs", "https://aionlabs.ai/", "GATEWAY", "FREE", "ai-tools",
+                  "11 free models at 15 RPM and 20,000 tokens per day reported; no credit card.",
+                  ("router", "tokens")),
+    ProviderEntry("Agnes AI", "https://agnes-ai.com/", "GATEWAY", "FREE", "ai-tools",
+                  "5 free models at 30 RPM reported; registration only, no credit card.",
+                  ("router", "openai-compatible")),
+    ProviderEntry("ModelScope Inference", "https://modelscope.cn/", "HOST", "CHECK",
+                  "ai-tools",
+                  "2,000 requests per day reported across 61 models; registration or phone "
+                  "verification required.",
+                  ("hosted", "china", "qwen")),
+    ProviderEntry("Pollinations", "https://pollinations.ai/", "GATEWAY", "CHECK",
+                  "ai-tools",
+                  "24 free models reported, funded by Pollen earned in the dashboard rather "
+                  "than an unlimited free tier.",
+                  ("router", "pollen")),
+    ProviderEntry("Upstage", "https://upstage.ai/", "HOST", "CREDITS", "ai-tools",
+                  "$10 trial credit reported, valid for three months.",
+                  ("hosted", "trial")),
+    ProviderEntry("NaraRouter", "https://router.bynara.id/", "GATEWAY", "CHECK", "ai-tools",
+                  "5,000,000-7,000,000 free tokens per day reported, resetting daily with no "
+                  "credit card. The source listing for this provider was corrupted - the "
+                  "published base URL was a Google search URL rather than the endpoint - so "
+                  "treat this entry as unconfirmed until checked by hand.",
+                  ("router", "tokens", "coding")),
 )
 
 #: How each access label should be presented. `CHECK` is deliberately the weakest
