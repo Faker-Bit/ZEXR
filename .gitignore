@@ -72,3 +72,7 @@ desktop.ini
 .cache/
 .parcel-cache/
 .turbo/
+# Runtime service logs
+backend/logs/
+frontend/logs/
+
