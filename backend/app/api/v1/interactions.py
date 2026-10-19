@@ -12,6 +12,7 @@ from app.core.logging import get_logger
 from app.core.ratelimit import limit
 from app.core.security import random_token
 from app.db.base import utcnow
+from app.services import stats as stats_service
 from app.models.offer import Offer
 from app.models.user import NewsletterSubscriber, Report, Submission
 from app.schemas.auth import NewsletterResult, NewsletterSubscribe, ReportCreate
@@ -232,6 +233,18 @@ def track_event(
     )
     session.commit()
     return {"ok": True}
+
+
+@router.get("/stats/today", summary="Today's page views and visitors (public)")
+@limit("120/minute")
+def today_stats(request: Request, response: Response, session: SessionDep) -> dict[str, int]:
+    """Public counters for the header.
+
+    Two integers, no breakdown. Anonymous and read-only, so it is safe to expose,
+    and it is the same first-party session count the privacy page describes.
+    Served from a short in-process cache so the header costs nothing per render.
+    """
+    return stats_service.today_stats(session)
 
 
 @router.get("/reports/mine", summary="Reports you have filed")

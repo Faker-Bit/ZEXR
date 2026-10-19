@@ -16,6 +16,7 @@ Plus,
     User as UserIcon,
   } from "lucide-react";
 import { Logo } from "./logo";
+import { VisitorCounter } from "./visitor-counter";
 import { SearchBar } from "./search-bar";
 import { ThemeToggle } from "./theme";
 import { useAuth } from "./auth-provider";
@@ -75,6 +76,7 @@ export function Header({ categories }: HeaderProps) {
         </button>
 
         <Logo />
+        <VisitorCounter className="ml-3" />
 
         <nav className="ml-4 hidden items-center gap-0.5 lg:flex">
           <NavLink href="/offers" active={pathname === "/offers"}>
