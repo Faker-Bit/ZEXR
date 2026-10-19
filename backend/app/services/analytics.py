@@ -185,6 +185,26 @@ def _series(session: Session, metric: str, days: int) -> list[TrendPoint]:
     return [TrendPoint(day=d.isoformat(), value=found.get(d.isoformat(), 0)) for d in _day_keys(days)]
 
 
+def _unique_sessions_series(session: Session, metric: str, days: int) -> list[TrendPoint]:
+    """Distinct first-party session ids per day: an approximation of visitors.
+
+    Not people. Someone clearing storage, or switching browser, counts twice.
+    Rows without a session id are excluded rather than lumped into a bucket.
+    """
+    since = utcnow().date() - timedelta(days=days - 1)
+    rows = session.execute(
+        select(func.date(Event.created_at), func.count(func.distinct(Event.session_id)))
+        .where(
+            Event.event_type == metric,
+            Event.session_id.isnot(None),
+            func.date(Event.created_at) >= since,
+        )
+        .group_by(func.date(Event.created_at))
+    ).all()
+    found = {str(row[0]): int(row[1]) for row in rows}
+    return [TrendPoint(day=d.isoformat(), value=found.get(d.isoformat(), 0)) for d in _day_keys(days)]
+
+
 def dashboard_stats(session: Session) -> DashboardStats:
     now = utcnow()
     week_ago = now - timedelta(days=7)
@@ -399,16 +419,53 @@ def analytics_overview(session: Session, days: int = 30) -> AnalyticsOverview:
         session.execute(select(func.count()).select_from(_verification_table())).scalar() or 0
     )
 
+    page_views_series = _series(session, EventType.PAGE_VIEW.value, days)
+    unique_visitors_series = _unique_sessions_series(session, EventType.PAGE_VIEW.value, days)
+
+    # Counted over the whole table, not just the window, so the headline number
+    # is the site's lifetime total rather than "in the last N days".
+    page_view_total = int(
+        session.execute(
+            select(func.count(Event.id)).where(Event.event_type == EventType.PAGE_VIEW.value)
+        ).scalar()
+        or 0
+    )
+    unique_visitors_total = int(
+        session.execute(
+            select(func.count(func.distinct(Event.session_id))).where(
+                Event.event_type == EventType.PAGE_VIEW.value,
+                Event.session_id.isnot(None),
+            )
+        ).scalar()
+        or 0
+    )
+
+    top_paths = [
+        TopRow(label=path or "(unknown)", value=count)
+        for path, count in session.execute(
+            select(Event.path, func.count(Event.id))
+            .where(Event.event_type == EventType.PAGE_VIEW.value, Event.path.isnot(None))
+            .group_by(Event.path)
+            .order_by(func.count(Event.id).desc())
+            .limit(10)
+        ).all()
+    ]
+
     return AnalyticsOverview(
         range_days=days,
         clicks=_series(session, EventType.OFFER_CLICK.value, days),
         views=_series(session, EventType.OFFER_VIEW.value, days),
+        page_views=page_views_series,
+        unique_visitors=unique_visitors_series,
         searches=_series(session, EventType.SEARCH.value, days),
         signups=signups_series,
         top_categories=top_categories,
         top_offers=top_offers,
         top_countries=top_countries,
         top_searches=top_searches,
+        page_view_total=page_view_total,
+        unique_visitors_total=unique_visitors_total,
+        top_paths=top_paths,
         zero_result_searches=[
             TopRow(label=query, value=count) for query, count in zero_rows
         ],

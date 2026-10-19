@@ -473,16 +473,21 @@ export interface TopRow {
 
 export interface AnalyticsOverview {
   range_days: number;
-  clicks: TrendPoint[];
+clicks: TrendPoint[];
   views: TrendPoint[];
+  page_views: TrendPoint[];
+  unique_visitors: TrendPoint[];
   searches: TrendPoint[];
   signups: TrendPoint[];
   top_categories: TopRow[];
   top_offers: TopRow[];
   top_countries: TopRow[];
   top_searches: TopRow[];
+  top_paths: TopRow[];
   zero_result_searches: TopRow[];
   conversion_rate: number;
+  page_view_total: number;
+  unique_visitors_total: number;
   click_to_verify_rate: number;
   verification_success_rate: number;
 }

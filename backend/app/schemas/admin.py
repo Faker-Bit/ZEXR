@@ -241,6 +241,10 @@ class AnalyticsOverview(ORMModel):
     range_days: int = 30
     clicks: list[TrendPoint] = Field(default_factory=list)
     views: list[TrendPoint] = Field(default_factory=list)
+    # Site-wide page views, distinct from `views`, which are offer views.
+    page_views: list[TrendPoint] = Field(default_factory=list)
+    # Distinct first-party session ids per day, i.e. approximate unique visitors.
+    unique_visitors: list[TrendPoint] = Field(default_factory=list)
     searches: list[TrendPoint] = Field(default_factory=list)
     signups: list[TrendPoint] = Field(default_factory=list)
     top_categories: list[TopRow] = Field(default_factory=list)
@@ -249,6 +253,9 @@ class AnalyticsOverview(ORMModel):
     top_searches: list[TopRow] = Field(default_factory=list)
     zero_result_searches: list[TopRow] = Field(default_factory=list)
     conversion_rate: float = 0
+    page_view_total: int = 0
+    unique_visitors_total: int = 0
+    top_paths: list[TopRow] = Field(default_factory=list)
     click_to_verify_rate: float = 0
     verification_success_rate: float = 0
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, TrendingUp, Zap } from "lucide-react";
+import { BarChart3, Eye, TrendingUp, Users, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { AdminShell } from "@/components/admin/shell";
 import type { AnalyticsOverview, TopRow, TrendPoint } from "@/lib/types";
@@ -42,6 +42,18 @@ export function AdminAnalytics() {
       }
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          label="Page views"
+          value={data ? data.page_view_total : null}
+          hint="all time"
+          icon={Eye}
+        />
+        <Metric
+          label="Unique visitors"
+          value={data ? data.unique_visitors_total : null}
+          hint="distinct sessions"
+          icon={Users}
+        />
         <Metric label="Clicks" value={data ? totals(data.clicks) : null} />
         <Metric label="Offer views" value={data ? totals(data.views) : null} />
         <Metric label="Searches" value={data ? totals(data.searches) : null} />
@@ -70,6 +82,8 @@ export function AdminAnalytics() {
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <Chart title="Page views per day" series={data.page_views} />
+            <Chart title="Unique visitors per day" series={data.unique_visitors} />
             <Chart title="Clicks per day" series={data.clicks} />
             <Chart title="Searches per day" series={data.searches} />
             <Chart title="Offer views per day" series={data.views} />
@@ -77,6 +91,11 @@ export function AdminAnalytics() {
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <Ranked
+              title="Most visited pages"
+              rows={data.top_paths}
+              format={(row) => `${row.value}×`}
+            />
             <Ranked title="Top categories" rows={data.top_categories} />
             <Ranked title="Top offers by clicks" rows={data.top_offers} />
             <Ranked

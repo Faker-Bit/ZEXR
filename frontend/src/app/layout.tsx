@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/site/auth-provider";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { loadCategories } from "@/lib/categories";
+import { PageViewTracker } from "@/components/site/page-view-tracker";
 import { siteMetadata, jsonLd, websiteSchema, ORGANISATION_SCHEMA } from "@/lib/seo";
 
 export const metadata: Metadata = siteMetadata;
@@ -47,6 +48,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-dvh bg-background font-sans">
         <ThemeProvider>
+          <PageViewTracker />
           <ToastProvider>
             <AuthProvider>
               <a
